@@ -70,7 +70,7 @@ DXHX requires Base Port + 2 (Default port is 7990, so 7990-7992/udp)
 | ServerQuery     | 7991/udp|
 | ServerUplink       	| 7992/udp|
 
-If you change the default port you must update the mapping on boths sides of the container (e.g., if you choose port 5941, you will need to ensure ports are mapped as 5941-5943:5941-5943)
+If you change the default port you must update the mapping on boths sides of the container (e.g., if you choose port `5941`, you will need to ensure ports are mapped as `5941-5943:5941-5943`)
 
 ## User / Group Identifiers
 Taking a page from linuxserver.io's book, I have adapted the container to allow for configurable UID & GID mapping. If you would like to know more, please see [their page](https://docs.linuxserver.io/general/understanding-puid-and-pgid) on the topic. If you are unsure of what this is I recommend leaving `PUID` and `PGID` at their default values of `1000`.
