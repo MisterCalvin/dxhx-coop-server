@@ -1,5 +1,5 @@
 # Deus Ex Coop Dedicated Server
-A Docker container for running a dedicated Deus Ex Coop server under Wine, built on Alpine. The container is built with the latest build of [DXHX](https://wiki.deusexcoop.com/index.php?title=Getting_Started) (Build `HX-0.9.89.4`) which can be installed with `HX_INSTALL="True"` in your docker compose file or docker run command. Your game directory (mounted in the container as `/container/deusex`) should be structured as follows:
+A Docker container for running a dedicated Deus Ex Coop server under Wine, built on Alpine. The container is built with the latest build of [HX Coop](https://wiki.deusexcoop.com/index.php?title=Getting_Started) (Build `HX-0.9.89.4`) which can be installed with `HX_INSTALL="True"` in your docker compose file or docker run command. Your game directory (mounted in the container as `/container/deusex`) should be structured as follows:
 
     .
     ├── ...
