@@ -7,6 +7,7 @@ ENV \
   S6_CATCHALL_USER="wine" \
   S6_VERBOSITY="0" \ 
   UMASK="022" \
+  TZ="" \
   PUID="1000" \
   PGID="1000" \
   WINEDEBUG="-all" \
