@@ -62,7 +62,7 @@ docker run -d \
 ```
   
 ## Server Ports
-DXHX requires Base Port + 2 (Default port is 7990, so 7990-7992/udp)
+HX Coop requires Base Port + 2 (Default port is 7990, so 7990-7992/udp)
 
 | Port      | Default  |
 |-----------|----------|
