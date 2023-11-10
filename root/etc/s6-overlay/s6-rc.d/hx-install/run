@@ -18,7 +18,8 @@ if [[ "${INSTALL_HX:=False}" = [Tt]rue ]]; then
 
 	chown -R wine:wine $GAMEDIR
 else
-	echo "Skipping HX install check"
+	echo "Skipping HX install"
+	exit 0
 fi
 
 echo "All HX files found, continuing"
