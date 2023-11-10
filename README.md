@@ -24,7 +24,7 @@ services:
       - "SERVER_PORT=" # Optional: Port the Server will listen on; Default: 7990
       - "SERVER_INI=" # Optional: Specify a custom server configuration file; Default: unset
       - "ADMIN_PASSWORD=" # Optional: Admin password (if empty admin login will be disabled); Default: unset
-      - "MAP=00_Training" # Requird: Map to play; Default: 00_Training
+      - "MAP=00_Training" # Optional: Map to play; Default: 00_Training
       - "MUTATORS=" # Optional: A comma-separated list of Mutators to load; Default: unset
       - "MAX_PLAYERS=8" # Optional, Max Players for the server; Default: 8
       - "DIFFICULTY=1" # Optional: Specify game difficulty, 0 = Easy, 1 = Medium, 2 = Hard, or 3 = DeusEx (Realistic); Default: 1 (Medium)
