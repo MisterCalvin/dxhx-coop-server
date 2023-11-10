@@ -1,0 +1,10 @@
+#!/command/with-contenv sh
+
+if [ ! "$PUID" = "1000" ] || [ ! "$PGID" = "1000" ]; then
+    	echo "New UID/GID specified, modifying current container user"
+	echo "This will change file permissions on the mounted volume!"
+	groupmod --gid "$PGID" wine
+    	usermod --uid "$PUID" --gid "$PGID" wine
+	chown "$PUID:$PGID" /container 
+	chown -R "$PUID:$PGID" /container/.wine 
+fi

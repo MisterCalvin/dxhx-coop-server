@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  dxhx-coop-server:
+    image: dxhx-coop-server:latest
+    build:
+      context: .
+    container_name: dxhx-coop-server
+    environment:
+      - "TZ=America/New_York"
+      - "PUID=1000" # Optional: Set the UID for the user inside the container; Default: 1000
+      - "PGID=1000" # Optional: Set the GID for the user inside the container; Default: 1000
+      - "SERVER_NAME=" # Required: Name of your server; Default: Another Docker HX Coop Server
+      - "SERVER_PASSWORD=" # Optional: Server password. Clients will need DXMTL to enable a GUI password field, enter in console: open <youripaddress>:<port>?password=<password> in order to connect; Default: unset
+      - "SERVER_PORT=" # Optional: Port the Server will listen on; Default: 7990
+      - "SERVER_INI=" # Optional: Specify a custom server configuration file (with file extension). File must be in Deus Ex System/ folder; Default: unset
+      - "ADMIN_PASSWORD=" # Optional: Admin password (if empty admin login will be disabled); Default: unset
+      - "MAP=01_NYC_UNATCOHQ" # Requird: Map to play; Default: 00_Training
+      - "MUTATORS=" # Optional: A comma-separated list of Mutators to load; Default: unset
+      - "MAX_PLAYERS=1" # Optional, Max Players for the server; Default: 8
+      - "DIFFICULTY=" # Required: Specify game difficulty, 0 = Easy, 1 = Medium, 2 = Hard, or 3 = DeusEx (Realistic); Default: 1 (Medium)
+      - "ADDITIONAL_ARGS=" # Optional: Pass additional arguments such as multihome or specify a custom log file; Default: unset
+      - "INSTALL_HX=True" # Optional: Container will check for HX files in your game folder, if not found it will install the latest version; Default: unset
+    volumes:
+      - ../deusex-coop:/container/deusex
+    ports:
+      - 7990-7992:7990-7992/udp
+    restart: unless-stopped
