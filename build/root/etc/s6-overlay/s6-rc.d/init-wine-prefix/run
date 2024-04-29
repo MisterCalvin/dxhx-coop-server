@@ -1,0 +1,8 @@
+#!/command/with-contenv bash
+
+source /usr/bin/debug.sh
+
+if [ -z "$(ls -A /container/.wine)" ]; then
+        echo "Initializing wine prefix, this may take a minute or two on slower systems. Be patient, this will be quicker on subsequent runs."
+	wineboot -u 2>&1
+fi

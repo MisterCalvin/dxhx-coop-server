@@ -1,0 +1,137 @@
+#!/command/with-contenv bash
+
+source /usr/bin/debug.sh
+
+GAMEDIR="/container/deusex"
+dxfiles="u int"
+metadata_file="$GAMEDIR/System/dx_randomizer_metadata.txt"
+umask "$UMASK"
+
+# Ensure metadata file exists
+if [ ! -f "$metadata_file" ]; then
+    echo "Creating metadata file."
+    touch "$metadata_file"
+fi
+
+# Function to read a specific metadata key, stripping potential double quotes
+read_metadata() {
+    grep "^$1=" "$metadata_file" | cut -d'=' -f2- | tr -d '"'
+}
+
+# Function to update or add metadata, ensuring no double quotes around value
+update_metadata() {
+    local key="$1"
+    local value="$2"
+    local temp_file="$metadata_file.tmp"
+
+    # Remove existing line with the same key, if any
+    grep -v "^$key=" "$metadata_file" > "$temp_file"
+    echo "$key=$value" >> "$temp_file"
+    mv "$temp_file" "$metadata_file"
+}
+
+check_time_constraint() {
+    local last_check=$(read_metadata "last_check_timestamp")
+    local current_time=$(date +%s)
+
+    # Calculate the time difference and the remaining minutes
+    local time_diff=$((current_time - last_check))
+    local minutes_since_last_check=$((time_diff / 60))
+    local minutes_until_next_check=$((60 - minutes_since_last_check))
+
+    if [[ -n "$last_check" && "$time_diff" -lt 3600 ]]; then
+        echo "Last update check was less than 60 minutes ago, skipping... ($minutes_until_next_check minutes until next update check)"
+        local version=$(read_metadata "last_download_version_u")
+        printf "$version" > /var/run/s6/container_environment/DX_VERSION
+        exit 0
+    else
+        # Update last_check_timestamp if not recently checked or key is missing
+        update_metadata "last_check_timestamp" "$current_time"
+    fi
+}
+
+# Function to download file with ETag checking and error handling
+download_file() {
+    local filetype=$1
+    local raw_url="https://raw.githubusercontent.com/Die4Ever/deus-ex-randomizer/master/HXRandomizer.$filetype"
+    local filepath="$GAMEDIR/System/HXRandomizer.$filetype"
+    local headers=$(mktemp -p "$GAMEDIR/System")  # Create temp file in the System directory
+
+    # Checking file and ETag
+    if [[ $CONTAINER_DEBUG = 1 ]]; then
+        wget --spider --server-response "$raw_url" 2>&1 | tee "$headers"
+    else
+        wget --spider --server-response "$raw_url" &> "$headers"
+    fi
+
+    local status_code=$(awk '/HTTP\// {print $2}' < "$headers")
+    local current_etag=$(awk '/ETag:/ {print $2}' < "$headers" | tr -d '\r' | tr -d '"')
+    rm "$headers"  # Clean up temporary file
+
+    local old_etag=$(read_metadata "old_etag_$filetype")
+
+    if [[ "$status_code" != "200" ]]; then
+        if [ ! -f "$filepath" ]; then
+            echo "Something went wrong, could not download DX Randomizer from GitHub, and could not find files on disk, switching to normal coop."
+            echo "False" > /var/run/s6/container_environment/DX_RANDOMIZER
+        else
+            local version=$(read_metadata "last_download_version_u")
+            echo "Failed to fetch DX Randomizer update, continuing with $version."
+        fi
+    elif [ "$current_etag" != "$old_etag" ] || [ ! -f "$filepath" ]; then
+        #echo "Attempting to download DXRandomizer..."
+	if wget -q --no-hsts -O "$filepath" "$raw_url" 2>&1; then
+        download_summary="${download_summary}HXRandomizer.$filetype updated"
+
+	    # Update metadata
+	    update_metadata "old_etag_$filetype" "$current_etag"
+	    update_metadata "last_check_timestamp" "$(date +%s)"
+	    
+	    if [ "$filetype" = "u" ]; then
+	        local commit_data=$(wget -q -O - "https://api.github.com/repos/Die4Ever/deus-ex-randomizer/commits?path=HXRandomizer.$filetype&page=1&per_page=1")
+	        local commit_message=$(echo "$commit_data" | jq -r '.[0].commit.message')
+	        local commit_hash=$(echo "$commit_data" | jq -r '.[0].sha')
+	        local version=$(echo $commit_message | grep -o 'v[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*' || echo "")
+	        
+	        update_metadata "last_commit_message_u" "$commit_message"
+	        update_metadata "last_commit_hash_u" "$commit_hash"
+	        update_metadata "last_download_version_u" "$version"
+	        #echo "Latest commit message for HXRandomizer.u: $commit_message"
+	        #echo "Extracted version: $version"
+
+            download_summary="${download_summary} to version ${version:-"Unknown Version"}\n"
+            download_summary+="Commit message: ${commit_message:-"No commit message"}\n"
+        else
+            download_summary="${download_summary}\n"
+	    fi
+	    chown wine:wine "$filepath"
+	else
+	    download_summary="${download_summary}Download of HXRandomizer.$filetype failed.\n"
+        download_errors=$((download_errors + 1))
+	    if [ ! -f "$filepath" ]; then
+	        echo "File not found on disk. Cannot proceed without update."
+	    else
+	        local version=$(read_metadata "last_download_version_u")
+	        echo "Using existing version $version due to download issues."
+	    fi
+	fi
+    else
+        download_summary="${download_summary}No update needed for HXRandomizer.$filetype\n"
+    fi
+}
+
+if [[ "$DX_RANDOMIZER" = "True" ]]; then
+	if [ "$DX_AUTOUPDATE" = "True" ]; then
+        check_time_constraint
+        for i in $dxfiles; do
+            download_file "$i"
+        done
+        printf "Download Summary:\n$download_summary"
+    else
+        version=$(read_metadata "last_download_version_u")
+        printf "DX Randomizer auto-update is disabled, current version is: ${version:-"Unknown Version"}\n"
+    fi
+
+    version=$(read_metadata "last_download_version_u")
+    printf "$version" > /var/run/s6/container_environment/DX_VERSION
+fi

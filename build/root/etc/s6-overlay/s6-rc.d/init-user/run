@@ -1,0 +1,29 @@
+#!/command/with-contenv bash
+
+source /usr/bin/debug.sh
+
+check_and_chown() {
+    local dir=$1
+    local uid=$(stat -c "%u" $dir)
+    local gid=$(stat -c "%g" $dir)
+
+    if [ "$uid" != "$PUID" ] || [ "$gid" != "$PGID" ]; then
+        echo "Changing ownership of $dir to $PUID:$PGID"
+        chown -R "$PUID:$PGID" $dir
+    fi
+}
+
+if [ ! "$PUID" = "1000" ] || [ ! "$PGID" = "1000" ]; then
+    echo "New UID/GID specified, modifying current container user"
+    echo "This will change file permissions on the mounted volume!"
+    groupmod --gid "$PGID" wine
+    usermod --uid "$PUID" --gid "$PGID" wine
+
+    # Ensure the root container directory is owned by wine user
+    chown "$PUID:$PGID" /container
+fi
+
+# Check and change ownership recursively if necessary
+check_and_chown "/container"
+check_and_chown "/container/deusex"
+check_and_chown "/container/.wine"

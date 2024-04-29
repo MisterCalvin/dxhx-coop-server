@@ -1,0 +1,22 @@
+#!/command/with-contenv bash
+
+source /usr/bin/debug.sh
+
+GAMEDIR=/container/deusex
+hxfiles="exe dll u int" 
+umask $UMASK
+
+for i in $hxfiles; do
+        while [[ ! -e "$GAMEDIR/System/HX.$i" ]]; do
+                echo "HX.$i not found, installing DXHX"
+		cp -r /container/ServerFiles/HX/* $GAMEDIR/
+	done
+done
+
+if [[ ! -e "$GAMEDIR/System/HX.ini" ]]; then
+	cp /container/ServerFiles/HX.ini $GAMEDIR/System
+fi
+
+chown -R wine:wine $GAMEDIR
+
+echo "All DXHX files found, continuing"
