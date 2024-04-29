@@ -1,3 +1,0 @@
-#!/command/execlineb -P
-s6-setuidgid wine
-"/usr/bin/dxhx_startup.sh"

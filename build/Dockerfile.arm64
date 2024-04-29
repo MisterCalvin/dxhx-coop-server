@@ -1,0 +1,90 @@
+FROM arm64v8/alpine as builder
+RUN apk add --no-cache gcc musl-dev pcre-dev
+COPY ./simple_logger.c /src/
+WORKDIR /src
+RUN gcc -o simple_logger simple_logger.c /usr/lib/libpcre.a -static
+
+FROM arm64v8/alpine
+ARG S6_OVERLAY_VERSION=3.1.6.2
+ARG S6_ARCH=aarch64
+ARG HANGOVER_VERSION=9.5
+ARG HANGOVER_DISTRO=debian12_bookworm
+ARG HX_VERSION=0.9.89.4
+
+ARG CONTAINER_MAJOR_VERSION=1.1
+ARG CONTAINER_MINOR_VERSION=0
+
+ENV \
+  HOME="/container" \
+  S6_CATCHALL_USER="wine" \
+  S6_VERBOSITY="0" \
+  S6_CMD_WAIT_FOR_SERVICES_MAXTIME="0" \
+  CONTAINER_DEBUG="0" \
+  UMASK="022" \
+  TZ="" \
+  PUID="1000" \
+  PGID="1000" \
+  WINEDEBUG="-all" \
+  WINEPREFIX="/container/.wine" \
+  SERVER_NAME="Another Docker DXHX Coop Server" \
+  SERVER_PASSWORD="" \
+  SERVER_INI="" \
+  SERVER_PORT="7990" \  
+  MAP="00_Training" \
+  ADMIN_PASSWORD="" \
+  MUTATORS="" \
+  MAX_PLAYERS="8" \
+  DIFFICULTY="1" \
+  ADDITIONAL_ARGS="" \
+  INSTALL_HX="True" \
+  DX_RANDOMIZER="False" \
+  DX_DEATHMARKERS="True" \
+  DX_ENABLE_TELEMETRY="False" \
+  DX_GAMEMODE="0" \
+  DX_LOADOUT="0" \
+  DX_AUTOUPDATE="True"
+
+RUN apk add --no-cache \ 
+	'shadow' \
+	'tzdata' \
+	'wget' \
+	'jq' \
+	'bash' \
+        'figlet' \
+	'dpkg' && \ 
+	apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/testing hangover-wine && \
+	wget -q -nc --show-progress --progress=bar:force:noscroll --no-hsts -O /tmp/s6-overlay-noarch.tar.xz --user-agent=Mozilla --content-disposition -E -c "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz" && \
+	wget -q -nc --show-progress --progress=bar:force:noscroll --no-hsts -O /tmp/s6-overlay-${S6_ARCH}.tar.xz --user-agent=Mozilla --content-disposition -E -c "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_ARCH}.tar.xz" && \
+	wget -q -nc --show-progress --progress=bar:force:noscroll --no-hsts -O /tmp/HX.zip --user-agent=Mozilla --content-disposition -E -c "https://builds.hx.hanfling.de/testing/HX-${HX_VERSION}.zip" && \
+	wget -q -nc --show-progress --progress=bar:force:noscroll --no-hsts -O /tmp/hangover_${HANGOVER_VERSION}_${HANGOVER_DISTRO}_arm64.tar --user-agent=Mozilla --content-disposition -E -c "https://github.com/AndreRH/hangover/releases/download/hangover-${HANGOVER_VERSION}/hangover_${HANGOVER_VERSION}_${HANGOVER_DISTRO}_arm64.tar" && \
+        mkdir -pm 760 /container/ServerFiles/HX && \
+        tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz && \
+	tar -C / -Jxpf /tmp/s6-overlay-${S6_ARCH}.tar.xz && \
+	tar -C /tmp -xf /tmp/hangover_${HANGOVER_VERSION}_${HANGOVER_DISTRO}_arm64.tar hangover-wine_${HANGOVER_VERSION}~$(echo $HANGOVER_DISTRO | cut -d'_' -f2)_arm64.deb && \
+	dpkg-deb --fsys-tarfile /tmp/hangover-wine_${HANGOVER_VERSION}~$(echo $HANGOVER_DISTRO | cut -d'_' -f2)_arm64.deb | tar -xvf - ./usr/lib/wine/aarch64-windows/box64cpu.dll && \
+	unzip /tmp/HX.zip -d /container/ServerFiles/HX/ && \
+        rm -rf /tmp/* && \
+	addgroup --gid $PGID wine && \
+	adduser --uid $PUID --home /container --disabled-password --no-create-home --shell /bin/false --ingroup wine wine && \
+        chown -R wine:wine /container && \
+        touch /container/ServerFiles/CONTAINER_VERSION && \
+        echo "${CONTAINER_MAJOR_VERSION}.${CONTAINER_MINOR_VERSION}" > /container/ServerFiles/CONTAINER_VERSION && \
+        apk --purge del dpkg
+
+WORKDIR /container/deusex
+
+COPY ./root /
+COPY ./ServerFiles /container/ServerFiles
+COPY --from=builder /src/simple_logger /usr/local/bin/simple_logger
+
+EXPOSE 7790-7792/udp
+
+ENTRYPOINT [ "/init" ]
+
+LABEL \
+  org.opencontainers.image.authors="Kevin Moore" \
+  org.opencontainers.image.title="DXHX Coop Server" \
+  org.opencontainers.image.description="Docker container for running a Deus Ex Coop Dedicated Server" \
+  org.opencontainers.image.source=https://github.com/MisterCalvin/dxhx-coop-server \
+  org.opencontainers.image.version="${CONTAINER_MAJOR_VERSION}.${CONTAINER_MINOR_VERSION}" \
+  org.opencontainers.image.licenses=MIT

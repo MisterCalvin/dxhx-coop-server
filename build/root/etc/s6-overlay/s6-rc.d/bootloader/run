@@ -1,0 +1,7 @@
+#!/command/with-contenv bash
+
+source /usr/bin/debug.sh
+
+echo -e ""
+figlet -f ansi_shadow.flf "DXHX Coop"
+echo "A Docker container by MisterCalvin (v$(cat "/container/ServerFiles/CONTAINER_VERSION")) | discord.sbotnas.io"
