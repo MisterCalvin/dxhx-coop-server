@@ -1,6 +1,6 @@
 services:
   dxhx-coop-server:
-    image: git.sbotnas.io/kevin/dxhx-coop-server:latest
+    image: ghcr.io/mistercalvin/dxhx-coop-server:latest
     container_name: dxhx-coop-server
     environment:
       - "TZ=America/New_York"
