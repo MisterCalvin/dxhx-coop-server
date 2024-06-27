@@ -35,7 +35,7 @@ services:
       - "DX_LOADOUT=0" # Optional: Choose the load for DX Randomizer (0 = All Items Allowed, 1 = Prod Plus, 2 = Prod Pure, 3 = Ninja JC, 4 = By the Book, 5 = No Overpowered, 6 = Don't Give me the GEP Gun, 7 = No Pistaols, 8 = No Swords, 9 = Grenades Only, 10 = Freeman Mode; Default = 0 (All Items Allowed))
       - "DX_AUTOUPDATE=True" # Optional: Grab latest version of DX Randomizer on each container boot. See disclaimers in README.md; Default: True
     volumes:
-      - /path/to/your/gamefiles/:container/deusex
+      - /path/to/your/gamefiles/:/container/deusex
       - dxhx-coop-wine:/container/.wine
     ports:
       - 7990-7992:7990-7992/udp
